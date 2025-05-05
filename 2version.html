@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hudanalys - Skinroller</title>
+    <link rel="icon" href="https://skinroller.co/wp-content/uploads/2023/06/cropped-favicon-32x32.png" sizes="32x32">
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        body {
+            font-family: "Avenir", "Helvetica Neue", "Microsoft YaHei", Helvetica, Arial, sans-serif;
+            background: url("images/bakgrund.png") no-repeat center center fixed;
+            background-size: cover;
+            color: #333;
+            padding: 2rem;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        h1, h2, h3 {
+            color: #2c3e50;
+            font-family: "Avenir", "Helvetica Neue", sans-serif;
+            font-weight: 600;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            color: #4a4a4a;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        h1:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background-color: #c19ece;
+        }
+
+        p {
+            line-height: 1.6;
+            color: #4a4a4a;
+        }
+
+        .skin-analyzer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        #video-container {
+            width: 100%;
+            max-width: 640px;
+            height: 480px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            margin: 0 auto 2rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(193, 158, 206, 0.2);
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background-color: #f0f0f0;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        #captured-image {
+            display: none;
+            max-width: 640px;
+            height: 480px;
+            object-fit: cover;
+            margin: 0 auto;
+            border-radius: 10px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(193, 158, 206, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: #c19ece;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: "Avenir", "Helvetica Neue", sans-serif;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #a882bc;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .button-primary {
+            background-color: #c19ece;
+        }
+
+        .button-primary:hover {
+            background-color: #a882bc;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px dashed #c19ece;
+            box-sizing: border-box;
+            border-radius: 10px;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #c19ece;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .camera-guide {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 90%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .camera-guide-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .camera-guide-title .light-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            color: #ffd700;
+        }
+
+        .camera-guide-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .camera-guide-list li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .camera-guide-list li:before {
+            content: "•";
+            position: absolute;
+            left: 10px;
+            color: #c19ece;
+        }
+
+        .camera-guide-icon {
+            font-size: 2rem;
+            margin-right: 1.5rem;
+            color: #c19ece;
+        }
+        
+        .status-message {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: center;
+            border-left: 4px solid #c19ece;
+        }
+        
+        .analysis-results {
+            background-color: rgba(248, 249, 250, 0.8);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .result-item {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(193, 158, 206, 0.3);
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .face-position-guide {
+            width: 80%;
+            height: 80%;
+            border: 4px dashed #c19ece;
+            border-radius: 50%;
+            margin: 10px auto;
+            position: relative;
+            opacity: 0.8;
+        }
+
+        .face-position-text {
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin-top: 10px;
+        }
+
+        .severity {
+            font-weight: bold;
+            margin-top: 0.5rem;
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .severity.mild {
+            color: #fff;
+            background-color: #78c091;
+        }
+
+        .severity.moderate {
+            color: #fff;
+            background-color: #f0a35e;
+        }
+
+        .severity.severe {
+            color: #fff;
+            background-color: #e74c3c;
+        }
+
+        .face-map {
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            margin: 2rem auto;
+            position: relative;
+            background-color: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .face-map::before {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 45%;
+            background-color: rgba(0, 0, 0, 0.03);
+            border-radius: 40% 40% 60% 60%;
+            top: 55%;
+        }
+
+        .face-map::after {
+            content: '';
+            position: absolute;
+            width: 25%;
+            height: 8%;
+            background-color: rgba(0, 0, 0, 0.03);
+            border-radius: 30px;
+            top: 45%;
+        }
+
+        .face-eyes {
+            position: absolute;
+            width: 50%;
+            top: 35%;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .face-eye {
+            width: 12%;
+            height: 8%;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+        }
+
+        .problem-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: rgba(255, 0, 0, 0.5);
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 5;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .problem-marker.oily {
+            background-color: rgba(255, 165, 0, 0.6);
+        }
+
+        .problem-marker.dry {
+            background-color: rgba(0, 128, 255, 0.6);
+        }
+
+        .problem-marker.acne {
+            background-color: rgba(255, 0, 0, 0.6);
+        }
+
+        .problem-marker.pores {
+            background-color: rgba(128, 0, 128, 0.6);
+        }
+
+        .problem-marker.wrinkles {
+            background-color: rgba(128, 0, 128, 0.6);
+        }
+
+        .problem-marker.pigmentation {
+            background-color: rgba(0, 150, 136, 0.6);
+        }
+
+        .problem-marker.sensitivity {
+            background-color: rgba(233, 30, 99, 0.6);
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+            display: none;
+            width: 150px;
+            top: -5px;
+            left: 25px;
+        }
+
+        .problem-marker:hover .tooltip {
+            display: block;
+        }
+
+        .skin-analysis-breakdown {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 2rem auto;
+            max-width: 800px;
+            padding: 0 1rem;
+        }
+
+        .skin-metric {
+            background-color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .skin-metric h4 {
+            margin: 0 0 1rem 0;
+            color: #2c3e50;
+            font-size: 1.2rem;
+        }
+
+        .skin-metric .description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed rgba(193, 158, 206, 0.2);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+            color: #c19ece;
+        }
+
+        .progress-bar-container {
+            height: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar-fill.hudfett {
+            background-color: #ffa726;
+        }
+
+        .progress-bar-fill.fukt {
+            background-color: #66bb6a;
+        }
+
+        .progress-bar-fill.kanslighet {
+            background-color: #ef5350;
+        }
+
+        .light-check {
+            margin-top: 1rem;
+            padding: 1.2rem;
+            background-color: rgba(193, 158, 206, 0.08);
+            border-radius: 12px;
+            border-left: 4px solid #c19ece;
+        }
+
+        .light-check h3 {
+            margin-top: 0;
+            color: #4a4a4a;
+            font-size: 1.1rem;
+        }
+
+        .light-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .light-status.good {
+            background-color: #78c091;
+            color: white;
+        }
+
+        .light-status.poor {
+            background-color: #e27285;
+            color: white;
+        }
+
+        .light-tips {
+            margin-top: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .photo-analysis-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 2rem 0;
+        }
+
+        .analyzed-photo-container {
+            position: relative;
+            max-width: 100%;
+            margin-bottom: 1.5rem;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .analyzed-photo {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .photo-problem-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 5;
+            border: 2px solid white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+            transition: transform 0.2s ease;
+        }
+
+        /* 响应式设计 */
+        @media (min-width: 1024px) {
+            /* 电脑端 */
+            .photo-problem-marker {
+                width: 24px;
+                height: 24px;
+            }
+            .photo-tooltip {
+                width: 250px;
+                font-size: 1rem;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1023px) {
+            /* 平板端 */
+            .photo-problem-marker {
+                width: 20px;
+                height: 20px;
+            }
+            .photo-tooltip {
+                width: 200px;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 767px) {
+            /* 手机端 */
+            .photo-problem-marker {
+                width: 16px;
+                height: 16px;
+            }
+            .photo-tooltip {
+                width: 180px;
+                font-size: 0.9rem;
+                left: 20px;
+            }
+        }
+
+        .photo-problem-marker:hover {
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+
+        .photo-tooltip {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            display: none;
+            color: #333;
+            left: 30px;
+            top: -10px;
+            pointer-events: auto;
+        }
+
+        #problems-list {
+            width: 100%;
+            max-width: 600px;
+            padding-left: 20px;
+            display: none; /* 隐藏整个问题列表 */
+        }
+
+        #problems-list li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed rgba(193, 158, 206, 0.2);
+        }
+
+        #problems-list li:last-child {
+            border-bottom: none;
+        }
+
+        .problem-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 12px;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .quality-disclaimer {
+            background-color: rgba(255, 243, 205, 0.8);
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            position: relative;
+        }
+        
+        .quality-disclaimer button {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background-color: transparent;
+            border: none;
+            color: #856404;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: none;
+        }
+        
+        .tooltip-close-btn {
+            padding: 6px 12px;
+            background-color: #c19ece;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-right: 5px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .tooltip-close-btn:hover {
+            background-color: #a882bc;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+                background: url("images/bakgrundmobil.png") no-repeat center center fixed;
+                background-size: cover;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+
+            #video-container, #captured-image {
+                height: calc(100vh - 200px);
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+
+            .skin-analysis-breakdown {
+                grid-template-columns: 1fr;
+            }
+
+            .face-position-guide {
+                width: 90%;
+                height: 90%;
+                border-width: 6px;
+            }
+
+            .camera-guide {
+                padding: 15px;
+                margin: 15px auto;
+            }
+
+            .questionnaire-button {
+                max-width: 90%;
+                margin: 15px auto;
+            }
+        }
+        
+        .brand-logo {
+            display: block;
+            margin: 0 auto 1.5rem;
+            max-width: 180px;
+            height: auto;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            font-size: 0.9rem;
+            color: #888;
+            border-top: 1px solid rgba(193, 158, 206, 0.2);
+        }
+        
+        .footer a {
+            color: #c19ece;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* 工具提示样式 */
+        .photo-tooltip h3 {
+            margin-top: 0;
+            color: #c19ece;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(193, 158, 206, 0.2);
+            padding-bottom: 8px;
+        }
+
+        .skin-analysis-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 2rem;
+        }
+
+        .skin-analysis-results {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #c19ece;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 问卷按钮样式 */
+        .questionnaire-button {
+            display: block;
+            background-color: #c19ece;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            margin: 20px auto;
+            text-align: center;
+            max-width: 300px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .questionnaire-button:hover {
+            background-color: #a882bc;
+            transform: translateY(-2px);
+        }
+
+        /* 皮肤问题容器样式 */
+        .skin-problems-container {
+            margin-top: 2.5rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .skin-problems-container h3 {
+            position: relative;
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            color: #2c3e50;
+            font-size: 1.5rem;
+        }
+
+        .skin-problems-container h3:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(to right, #c19ece, #a882bc);
+            border-radius: 2px;
+        }
+
+        .skin-problem {
+            position: relative;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+            border-left: 4px solid #c19ece;
+            transition: transform 0.3s ease;
+        }
+
+        .skin-problem:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .problem-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .problem-severity {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-left: 1rem;
+        }
+
+        .problem-severity.mild {
+            background-color: rgba(120, 192, 145, 0.15);
+            color: #78c091;
+        }
+
+        .problem-severity.moderate {
+            background-color: rgba(240, 163, 94, 0.15);
+            color: #f0a35e;
+        }
+
+        .problem-severity.severe {
+            background-color: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+
+        .problem-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #c19ece;
+            text-align: center;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .problem-value:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(193, 158, 206, 0.2), transparent);
+        }
+
+        .problem-value span {
+            background: white;
+            padding: 0 1rem;
+            position: relative;
+        }
+
+        .problem-description {
+            margin-top: 1rem;
+            color: #4a4a4a;
+            line-height: 1.6;
+            padding: 1rem;
+            background: rgba(193, 158, 206, 0.05);
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .problem-description:before {
+            content: '"';
+            position: absolute;
+            top: 0;
+            left: 1rem;
+            font-size: 2rem;
+            color: rgba(193, 158, 206, 0.3);
+            line-height: 1;
+        }
+
+        @media (max-width: 768px) {
+            .skin-problems-container {
+                padding: 1.5rem;
+                margin-top: 2rem;
+            }
+
+            .skin-problem {
+                padding: 1.2rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .problem-title {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .problem-severity {
+                margin-left: 0;
+                margin-top: 0.5rem;
+            }
+        }
+
+        /* 添加位置描述的样式 */
+        .problem-location {
+            margin: 1rem 0;
+            padding: 0.8rem 1rem;
+            background: rgba(193, 158, 206, 0.08);
+            border-radius: 8px;
+            color: #2c3e50;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .problem-location i {
+            color: #c19ece;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="images/logo.png" alt="Skinroller" class="brand-logo">
+        <h1>Hudanalys</h1>
+
+        <!-- 添加拍照提示 -->
+        <div class="camera-guide">
+            <div class="camera-guide-title">
+                <span class="light-icon">💡</span>
+                <h3>Tips för bästa resultat:</h3>
+            </div>
+            <ul class="camera-guide-list">
+                <li>Se till att ditt ansikte är i bra belysning</li>
+                <li>Ta av glasögon, flytta undan hår och andra föremål som täcker ansiktet</li>
+                <li>Vänd ansiktet mot kameran och håll ett neutralt ansiktsuttryck</li>
+            </ul>
+        </div>
+
+        <!-- 修改问卷按钮文字 -->
+        <a href="https://medialab.sh.se/dikht23/stevenlu/webdesign/hud/fraga" class="questionnaire-button">
+            Hoppa över och gå direkt till formuläret
+        </a>
+
+        <div class="skin-analyzer">
+            <div id="video-container">
+                <video id="video" autoplay muted playsinline></video>
+                <canvas id="canvas"></canvas>
+                <img id="captured-image" alt="Captured Image">
+                <div id="overlay">
+                    <div class="face-position-guide"></div>
+                    <div class="face-position-text">Placera ansiktet i cirkeln</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="start-camera" class="button-primary">
+                    <i class="fas fa-camera"></i> Starta kamera
+                </button>
+                <button id="capture" disabled>
+                    <i class="fas fa-camera"></i> Ta bild
+                </button>
+                <button id="retake" style="display: none;">
+                    <i class="fas fa-redo"></i> Ta om
+                </button>
+                <button id="analyze" style="display: none;">
+                    <i class="fas fa-search"></i> Analysera hud
+                </button>
+                <input type="file" id="upload-image" accept="image/*" style="display: none;">
+                <button id="upload-btn">
+                    <i class="fas fa-upload"></i> Ladda upp bild
+                </button>
+            </div>
+            
+            <div class="loading-spinner" id="loading-spinner"></div>
+
+            <div class="skin-analysis-results" id="skin-analysis-results" style="display: none;">
+                <h2>Analysresultat</h2>
+                <div id="analysis-details"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const capturedImage = document.getElementById('captured-image');
+        const startCameraBtn = document.getElementById('start-camera');
+        const captureBtn = document.getElementById('capture');
+        const retakeBtn = document.getElementById('retake');
+        const analyzeBtn = document.getElementById('analyze');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const analysisResults = document.getElementById('skin-analysis-results');
+        const analysisDetails = document.getElementById('analysis-details');
+        
+        let stream = null;
+        let capturedImageData = null;
+
+        // Face++ API credentials
+        const API_KEY = 'WRIFzo2hOoW0QVuY-OQIBKTM6GzeIgYd';
+        const API_SECRET = 'UNcuUscgB9ot_WWNymS3FGy0O4uu_qXM';
+
+        startCameraBtn.addEventListener('click', async () => {
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                
+                // 等待视频加载完成
+                await video.play();
+                
+                // 设置canvas尺寸匹配视频
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                startCameraBtn.disabled = true;
+                captureBtn.disabled = false;
+                video.style.display = 'block';
+                capturedImage.style.display = 'none';
+                retakeBtn.style.display = 'none';
+                analyzeBtn.style.display = 'none';
+                captureBtn.style.display = 'block';
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                alert('Kunde inte komma åt kameran. Kontrollera att du har gett tillstånd.');
+            }
+        });
+
+        captureBtn.addEventListener('click', () => {
+            captureImage();
+        });
+
+        retakeBtn.addEventListener('click', () => {
+            capturedImage.style.display = 'none';
+            video.style.display = 'block';
+            retakeBtn.style.display = 'none';
+            analyzeBtn.style.display = 'none';
+            captureBtn.style.display = 'block';
+        });
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!capturedImageData) return;
+
+            loadingSpinner.style.display = 'block';
+            analyzeBtn.disabled = true;
+
+            try {
+                // Convert base64 to blob
+                const base64Data = capturedImageData.split(',')[1];
+                const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob());
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('api_key', API_KEY);
+                formData.append('api_secret', API_SECRET);
+                formData.append('image_file', blob);
+                formData.append('return_attributes', 'skinstatus,beauty,gender,age');
+
+                // Call Face++ API
+                const response = await fetch('https://api-us.faceplusplus.com/facepp/v3/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                console.log('Face++ API response:', data);
+
+                if (data.faces && data.faces.length > 0) {
+                    const skinStatus = data.faces[0].attributes.skinstatus;
+                    const beauty = data.faces[0].attributes.beauty;
+                    const gender = data.faces[0].attributes.gender.value;
+                    const age = data.faces[0].attributes.age.value;
+                    
+                    console.log('Skin status:', skinStatus);
+                    console.log('Beauty:', beauty);
+                    
+                    // 确保所有需要的属性都存在
+                    const defaultValues = {
+                        acne: 0,
+                        stain: 0,
+                        dark_circle: 0,
+                        wrinkle: 0,
+                        skin_health: 0,
+                        skin_gloss: 0
+                    };
+
+                    // 使用默认值或API返回的值
+                    const finalSkinStatus = {
+                        acne: skinStatus.acne || defaultValues.acne,
+                        stain: skinStatus.stain || defaultValues.stain,
+                        dark_circle: skinStatus.dark_circle || defaultValues.dark_circle,
+                        wrinkle: skinStatus.wrinkle || defaultValues.wrinkle,
+                        skin_health: skinStatus.skin_health || defaultValues.skin_health,
+                        skin_gloss: skinStatus.skin_gloss || defaultValues.skin_gloss
+                    };
+
+                    // 分析皮肤类型
+                    const skinType = analyzeSkinType(finalSkinStatus, beauty);
+                    console.log('Skin type analysis:', skinType);
+                    
+                    displayAnalysisResults(finalSkinStatus, skinType, gender, age);
+                } else {
+                    throw new Error('Inget ansikte hittades i bilden');
+                }
+            } catch (error) {
+                console.error('Error analyzing skin:', error);
+                analysisDetails.innerHTML = `
+                    <div class="error-message">
+                        Kunde inte analysera huden. Vänligen försök igen.
+                        <br>Felmeddelande: ${error.message}
+                    </div>
+                `;
+            } finally {
+                loadingSpinner.style.display = 'none';
+                analyzeBtn.disabled = false;
+                analysisResults.style.display = 'block';
+            }
+        });
+
+        function analyzeSkinType(skinStatus, beauty) {
+            // 油分检测 (Hudfett)
+            const oiliness = calculateOiliness(skinStatus, beauty);
+            
+            // 水分检测 (Fukt)
+            const moisture = calculateMoisture(skinStatus);
+            
+            // 敏感度检测 (Känslighet)
+            const sensitivity = calculateSensitivity(skinStatus);
+            
+            return {
+                oiliness: oiliness,
+                moisture: moisture,
+                sensitivity: sensitivity
+            };
+        }
+
+        // 计算油分
+        function calculateOiliness(skinStatus, beauty) {
+            const oilinessFactors = {
+                skin_gloss: skinStatus.skin_gloss * 0.4,    // 皮肤光泽度权重40%
+                pore_size: (skinStatus.pore || 0) * 0.3,    // 毛孔大小权重30%
+                acne: skinStatus.acne * 0.2,                // 痘痘情况权重20%
+                health: (100 - skinStatus.skin_health) * 0.1 // 皮肤健康度权重10%
+            };
+            
+            // 计算总油分值 (0-100)
+            const totalOiliness = Object.values(oilinessFactors).reduce((sum, value) => sum + value, 0);
+            return Math.min(totalOiliness / 100, 1); // 归一化到0-1范围
+        }
+
+        // 计算水分
+        function calculateMoisture(skinStatus) {
+            const moistureFactors = {
+                skin_health: skinStatus.skin_health * 0.4,     // 皮肤健康度权重40%
+                wrinkle: (100 - skinStatus.wrinkle) * 0.3,    // 皱纹情况权重30%
+                texture: (skinStatus.texture || 70) * 0.3      // 皮肤纹理权重30%
+            };
+            
+            // 计算总水分值 (0-100)
+            const totalMoisture = Object.values(moistureFactors).reduce((sum, value) => sum + value, 0);
+            return Math.min(totalMoisture / 100, 1); // 归一化到0-1范围
+        }
+
+        // 计算敏感度
+        function calculateSensitivity(skinStatus) {
+            const sensitivityFactors = {
+                acne: skinStatus.acne * 0.3,                // 痘痘情况权重30%
+                stain: skinStatus.stain * 0.3,              // 色斑情况权重30%
+                redness: (skinStatus.redness || 0) * 0.2,   // 泛红程度权重20%
+                dark_circle: skinStatus.dark_circle * 0.2    // 黑眼圈情况权重20%
+            };
+            
+            // 计算总敏感度值 (0-100)
+            const totalSensitivity = Object.values(sensitivityFactors).reduce((sum, value) => sum + value, 0);
+            return Math.min(totalSensitivity / 100, 1); // 归一化到0-1范围
+        }
+
+        function displayAnalysisResults(skinStatus, skinType, gender, age) {
+            const results = [];
+            
+            // 分析皮肤问题
+            if (skinStatus.acne > 0) {
+                results.push({
+                    title: 'Akne',
+                    severity: getSeverity(skinStatus.acne),
+                    description: getAcneDescription(skinStatus.acne),
+                    type: 'acne',
+                    value: skinStatus.acne.toFixed(2)
+                });
+            }
+
+            if (skinStatus.stain > 0) {
+                results.push({
+                    title: 'Pigmentfläckar',
+                    severity: getSeverity(skinStatus.stain),
+                    description: getStainDescription(skinStatus.stain),
+                    type: 'pigmentation',
+                    value: skinStatus.stain.toFixed(2)
+                });
+            }
+
+            if (skinStatus.dark_circle > 0) {
+                results.push({
+                    title: 'Mörka ringar',
+                    severity: getSeverity(skinStatus.dark_circle),
+                    description: getDarkCircleDescription(skinStatus.dark_circle),
+                    type: 'dark_circle',
+                    value: skinStatus.dark_circle.toFixed(2)
+                });
+            }
+
+            if (skinStatus.wrinkle > 0) {
+                results.push({
+                    title: 'Rynkor',
+                    severity: getSeverity(skinStatus.wrinkle),
+                    description: getWrinkleDescription(skinStatus.wrinkle),
+                    type: 'wrinkles',
+                    value: skinStatus.wrinkle.toFixed(2)
+                });
+            }
+
+            // 创建肤质分析结果容器
+            const skinAnalysisContainer = document.createElement('div');
+            skinAnalysisContainer.className = 'skin-analysis-breakdown';
+            
+            // 添加油性分析
+            const oilinessMetric = document.createElement('div');
+            oilinessMetric.className = 'skin-metric';
+            oilinessMetric.innerHTML = `
+                <h4>Hudfett</h4>
+                <div class="metric-value">${Math.round(skinType.oiliness * 100)}%</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill hudfett" style="width: ${skinType.oiliness * 100}%"></div>
+                </div>
+                <div class="description">
+                    Optimal nivå: 40-60%<br>
+                    Högre värde indikerar mer oljig hud,<br>lägre värde indikerar torrare hud
+                </div>
+            `;
+            
+            // 添加水分分析
+            const moistureMetric = document.createElement('div');
+            moistureMetric.className = 'skin-metric';
+            moistureMetric.innerHTML = `
+                <h4>Fukt</h4>
+                <div class="metric-value">${Math.round(skinType.moisture * 100)}%</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill fukt" style="width: ${skinType.moisture * 100}%"></div>
+                </div>
+                <div class="description">
+                    Optimal nivå: 70-90%<br>
+                    Högre värde indikerar bättre hydratiserad hud,<br>lägre värde indikerar uttorkad hud
+                </div>
+            `;
+            
+            // 添加敏感度分析
+            const sensitivityMetric = document.createElement('div');
+            sensitivityMetric.className = 'skin-metric';
+            sensitivityMetric.innerHTML = `
+                <h4>Känslighet</h4>
+                <div class="metric-value">${Math.round(skinType.sensitivity * 100)}%</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill kanslighet" style="width: ${skinType.sensitivity * 100}%"></div>
+                </div>
+                <div class="description">
+                    Optimal nivå: 0-30%<br>
+                    Lägre värde indikerar mindre känslig hud,<br>högre värde indikerar mer känslig hud
+                </div>
+            `;
+            
+            // 将所有指标添加到容器
+            skinAnalysisContainer.appendChild(oilinessMetric);
+            skinAnalysisContainer.appendChild(moistureMetric);
+            skinAnalysisContainer.appendChild(sensitivityMetric);
+            
+            // 清空并添加新的分析结果
+            analysisDetails.innerHTML = '';
+            analysisDetails.appendChild(skinAnalysisContainer);
+
+            // 显示皮肤问题分析结果
+            if (results.length > 0) {
+                const problemsContainer = document.createElement('div');
+                problemsContainer.className = 'skin-problems-container';
+                problemsContainer.innerHTML = `
+                    <h3>Hudproblem</h3>
+                    ${results.map(result => `
+                        <div class="skin-problem">
+                            <div class="problem-title">
+                                ${result.title}
+                                <div class="problem-severity ${getSeverityClass(result.severity)}">
+                                    ${result.severity}
+                                </div>
+                            </div>
+                            <div class="problem-value">
+                                <span>${result.value}%</span>
+                            </div>
+                            <div class="problem-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                ${getLocationDescription(result.type, result.value)}
+                            </div>
+                            <div class="problem-description">
+                                ${result.description}
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+                analysisDetails.appendChild(problemsContainer);
+            }
+
+            // 添加问卷跳转按钮
+            const questionnaireLink = document.createElement('a');
+            questionnaireLink.href = 'https://medialab.sh.se/dikht23/stevenlu/webdesign/hud/fraga';
+            questionnaireLink.className = 'questionnaire-button';
+            questionnaireLink.textContent = 'Hoppa över och gå direkt till formuläret';
+            analysisDetails.appendChild(questionnaireLink);
+        }
+
+        function getSeverity(value) {
+            // 将value转换为0-1之间的值
+            const normalizedValue = value / 100;
+            
+            if (normalizedValue < 0.3) return 'Mild';
+            if (normalizedValue < 0.7) return 'Måttlig';
+            return 'Allvarlig';
+        }
+
+        function getSeverityClass(severity) {
+            switch(severity.toLowerCase()) {
+                case 'mild': return 'mild';
+                case 'måttlig': return 'moderate';
+                case 'allvarlig': return 'severe';
+                default: return '';
+            }
+        }
+
+        function getAcneDescription(value) {
+            const normalizedValue = value / 100;
+            
+            if (normalizedValue < 0.3) return 'Lätt akne som kan behandlas med grundläggande hudvård.';
+            if (normalizedValue < 0.7) return 'Måttlig akne som kan kräva specifik behandling.';
+            return 'Allvarlig akne som kan kräva professionell behandling.';
+        }
+
+        function getStainDescription(value) {
+            const normalizedValue = value / 100;
+            
+            if (normalizedValue < 0.3) return 'Lätta pigmentfläckar som kan ljusnas med hudvård.';
+            if (normalizedValue < 0.7) return 'Måttliga pigmentfläckar som kan kräva specifik behandling.';
+            return 'Allvarliga pigmentfläckar som kan kräva professionell behandling.';
+        }
+
+        function getDarkCircleDescription(value) {
+            const normalizedValue = value / 100;
+            
+            if (normalizedValue < 0.3) return 'Lätta mörka ringar som kan förbättras med hudvård och god sömn.';
+            if (normalizedValue < 0.7) return 'Måttliga mörka ringar som kan kräva specifik behandling och livsstilsförändringar.';
+            return 'Allvarliga mörka ringar som kan kräva professionell behandling och medicinsk utvärdering.';
+        }
+
+        function getWrinkleDescription(value) {
+            const normalizedValue = value / 100;
+            
+            if (normalizedValue < 0.3) return 'Lätta rynkor som kan förbättras med hudvård.';
+            if (normalizedValue < 0.7) return 'Måttliga rynkor som kan kräva specifik behandling.';
+            return 'Allvarliga rynkor som kan kräva professionell behandling.';
+        }
+
+        // 添加面部区域定位描述函数
+        function getLocationDescription(type, value) {
+            // 根据问题类型和严重程度返回具体的位置描述
+            const locations = {
+                'acne': {
+                    mild: 'Främst i T-zonen (panna och näsa)',
+                    moderate: 'Spridd över T-zonen och kinderna',
+                    severe: 'Utbredd över hela ansiktet, särskilt T-zonen och käklinjen'
+                },
+                'pigmentation': {
+                    mild: 'Enstaka fläckar på kinderna',
+                    moderate: 'Synliga fläckar på kinder och panna',
+                    severe: 'Tydliga fläckar på kinder, panna och överläpp'
+                },
+                'dark_circle': {
+                    mild: 'Lätt skuggning under ögonen',
+                    moderate: 'Tydliga mörka ringar under båda ögonen',
+                    severe: 'Djupa mörka ringar under ögonen och mot näsroten'
+                },
+                'wrinkles': {
+                    mild: 'Fina linjer runt ögonen',
+                    moderate: 'Synliga linjer på panna och runt ögonen',
+                    severe: 'Djupa linjer på panna, runt ögon och noslabialfåror'
+                },
+                'oily': {
+                    mild: 'Lätt glans i T-zonen',
+                    moderate: 'Tydlig oljighet i T-zonen och på kinderna',
+                    severe: 'Utbredd oljighet över hela ansiktet'
+                },
+                'dry': {
+                    mild: 'Torr hud på kinderna',
+                    moderate: 'Torr hud på kinder och panna',
+                    severe: 'Utbredd torrhet, särskilt på kinder, panna och runt munnen'
+                },
+                'sensitivity': {
+                    mild: 'Lätt rodnad på kinderna',
+                    moderate: 'Rodnad på kinder och näsa',
+                    severe: 'Utbredd rodnad och känslighet över hela ansiktet'
+                }
+            };
+
+            const severity = value < 30 ? 'mild' : value < 70 ? 'moderate' : 'severe';
+            return locations[type] ? locations[type][severity] : '';
+        }
+
+        const uploadBtn = document.getElementById('upload-btn');
+        const uploadInput = document.getElementById('upload-image');
+
+        uploadBtn.addEventListener('click', () => {
+            uploadInput.click();
+        });
+
+        uploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    capturedImageData = e.target.result;
+                    capturedImage.src = capturedImageData;
+                    capturedImage.style.display = 'block';
+                    video.style.display = 'none';
+                    startCameraBtn.disabled = false;
+                    captureBtn.style.display = 'none';
+                    retakeBtn.style.display = 'block';
+                    analyzeBtn.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 修复图片方向问题
+        function captureImage() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            
+            // 获取设备方向
+            if (window.innerHeight > window.innerWidth) {
+                // 竖屏模式
+                context.translate(canvas.width, 0);
+                context.scale(-1, 1);
+            }
+            
+            context.drawImage(video, 0, 0);
+            capturedImageData = canvas.toDataURL('image/jpeg');
+            capturedImage.src = capturedImageData;
+            capturedImage.style.display = 'block';
+            video.style.display = 'none';
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'block';
+            analyzeBtn.style.display = 'block';
+        }
+    </script>
+</body>
+</html> 

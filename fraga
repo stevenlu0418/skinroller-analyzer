@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Hudanalysformulär</title>
+    <style>
+    body {
+        font-family: "Avenir", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background: linear-gradient(135deg, #f7f7f9 0%, #e8eaf6 100%);
+        color: #333;
+        padding: 2rem;
+        margin: 0;
+        min-height: 100vh;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .progress-container {
+        width: 100%;
+        background-color: rgba(224, 224, 224, 0.5);
+        border-radius: 10px;
+        margin-bottom: 3rem;
+        height: 8px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-bar {
+        background-color: #4a90e2;
+        height: 100%;
+        width: 0%;
+        border-radius: 10px;
+        transition: width 0.5s ease-in-out;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .question-indicator {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 2rem;
+    }
+
+    .indicator-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: rgba(193, 158, 206, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .indicator-dot.active {
+        background-color: #c19ece;
+        transform: scale(1.2);
+    }
+
+    .progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+            90deg,
+            rgba(255,255,255,0) 0%,
+            rgba(255,255,255,0.3) 50%,
+            rgba(255,255,255,0) 100%
+        );
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    .question {
+        max-width: 800px;
+        margin: 0 auto 4rem auto;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        padding: 3rem;
+        opacity: 0;
+        transform: translateY(20px);
+        visibility: hidden;
+        transition: all 0.5s ease-out;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        box-sizing: border-box;
+    }
+
+    .questions-container {
+        position: relative;
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .question.active {
+        opacity: 1;
+        transform: translateY(0);
+        visibility: visible;
+        position: relative;
+    }
+
+    .question p {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+        color: #2c3e50;
+    }
+
+    .question .description {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 2.5rem;
+        line-height: 1.6;
+    }
+
+    .answers {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+
+    .answers button {
+        display: flex;
+        align-items: center;
+        padding: 1.2rem;
+        border: 2px solid #e3e6f3;
+        border-radius: 12px;
+        background-color: #fff;
+        color: #333;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .answers button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-color: #c19ece;
+    }
+
+    .answers button.selected {
+        background-color: #c19ece;
+        color: #fff;
+        border-color: #c19ece;
+    }
+
+    .answers button.selected::before {
+        content: "✓";
+        position: absolute;
+        right: 1rem;
+        font-size: 1.2rem;
+        animation: checkmark 0.3s ease-in-out;
+    }
+
+    @keyframes checkmark {
+        0% { transform: scale(0); }
+        50% { transform: scale(1.5); }
+        100% { transform: scale(1); }
+    }
+
+    .answers button img {
+        width: 40px;
+        height: 40px;
+        margin-right: 1rem;
+        object-fit: contain;
+        transition: transform 0.3s ease;
+    }
+
+    .answers button:hover img {
+        transform: scale(1.1);
+    }
+
+    .navigation {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .nav-button {
+        background-color: #fff;
+        color: #c19ece;
+        border: 2px solid #c19ece;
+        border-radius: 8px;
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .nav-button:hover {
+        background-color: #c19ece;
+        color: #fff;
+        transform: translateY(-2px);
+    }
+
+    .product-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        margin-top: 2rem;
+        align-items: center;
+        width: 100%;
+        max-width: 1200px;
+    }
+
+    .product-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+        width: 100%;
+    max-width: 800px;
+        margin: 0 auto;
+    gap: 2rem;
+        box-sizing: border-box;
+}
+
+    .product-type {
+        display: inline-block;
+        padding: 4px 8px;
+        background-color: #f0f0f0;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+    }
+
+.product-image {
+    width: 180px;
+    height: 180px;
+    object-fit: contain;
+    border-radius: 10px;
+    margin-right: 0;
+    flex-shrink: 0;
+}
+
+    .product-info {
+        flex-grow: 1;
+    }
+
+    .product-title {
+        font-size: 1.8rem;
+        margin-bottom: 0.3rem;
+        color: #2c3e50;
+        font-weight: bold;
+    }
+
+    .product-description {
+        font-size: 1rem;
+        color: #666;
+        line-height: 1.4;
+        margin-bottom: 1rem;
+    }
+
+    .buy-button {
+        background-color: #000;
+        color: #fff !important;
+        border: 2px solid #000;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        white-space: nowrap;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .buy-button:hover {
+        background-color: #333;
+        border-color: #333;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    @media (max-width: 768px) {
+        body {
+            padding: 1rem;
+        }
+
+        .container {
+            padding: 1rem;
+            max-width: 100%;
+        }
+
+        .question {
+            padding: 2rem;
+            max-width: 100%;
+        }
+
+        .answers button {
+            padding: 1rem;
+        }
+
+        .answers button img {
+            width: 30px;
+            height: 30px;
+        }
+
+        .nav-button {
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+        }
+
+        .product-grid {
+            width: 100%;
+            max-width: 100%;
+            padding: 0 1rem;
+        }
+
+        .product-card {
+        padding: 1.5rem;
+        gap: 1.5rem;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            box-sizing: border-box;
+    }
+
+    .product-image {
+        width: 200px;
+        height: 200px;
+        margin-bottom: 1.5rem;
+            margin-right: 0;
+    }
+
+        .product-info {
+            width: 100%;
+            text-align: center;
+            padding: 0 1rem;
+            box-sizing: border-box;
+        }
+
+        .product-title {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .product-description {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .buy-button {
+            width: 100%;
+            max-width: 200px;
+            padding: 0.7rem 1.4rem;
+            font-size: 1rem;
+            margin-top: 1rem;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+
+        .product-type {
+            margin-bottom: 0.5rem;
+        }
+    }
+
+    #final {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .weather-info {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .weather-icon {
+        width: 80px;
+        height: 80px;
+    }
+
+    .weather-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .weather-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .temperature {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .humidity {
+        font-size: 1.2rem;
+        color: #666;
+    }
+
+    .location {
+        font-size: 1.1rem;
+        color: #666;
+    }
+
+    .weather-tip {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #fff;
+        border-radius: 12px;
+        border-left: 4px solid #c19ece;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .weather-tip-content {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        line-height: 1.6;
+    }
+
+    .weather-tip-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(193, 158, 206, 0.2);
+    }
+
+    .weather-tip-header h3 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.4rem;
+    }
+
+    .weather-tip-header .weather-icon {
+        width: 40px;
+        height: 40px;
+        margin-right: 1rem;
+    }
+
+    .weather-tip-body {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .weather-condition {
+        background: rgba(193, 158, 206, 0.1);
+        padding: 1.2rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .weather-condition h4 {
+        color: #c19ece;
+        margin: 0 0 0.8rem 0;
+        font-size: 1.2rem;
+    }
+
+    .weather-recommendations {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .weather-recommendations li {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 0.8rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease;
+    }
+
+    .weather-recommendations li:hover {
+        transform: translateX(5px);
+    }
+
+    .weather-recommendations li:before {
+        content: "•";
+        color: #c19ece;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+
+    .weather-recommendations li:last-child {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 768px) {
+        .weather-tip-body {
+            grid-template-columns: 1fr;
+        }
+        
+        .weather-recommendations li {
+            padding: 0.6rem;
+        }
+    }
+
+    .compatibility-meter {
+        width: 100%;
+        height: 20px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        margin: 1rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .compatibility-bar {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease-in-out;
+    }
+
+    .compatibility-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: bold;
+        font-size: 1.1rem;
+        text-shadow: 0 0 2px white;
+    }
+
+    .compatibility-description {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        line-height: 1.6;
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .skip-button {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #c19ece;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .skip-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+    }
+
+    @media (max-width: 768px) {
+        .skip-button {
+            position: fixed;
+            bottom: 20px;
+            top: auto;
+            right: 20px;
+            z-index: 1000;
+        }
+    }
+    </style>
+</head>
+<body>
+    <button class="skip-button" onclick="window.location.href='https://medialab.sh.se/dikht23/stevenlu/webdesign/hud/fraga'">
+        跳过分析直接填写问卷
+    </button>
+    <div class="container">
+        <div class="progress-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <div class="question-indicator" id="question-indicator"></div>
+
+        <div class="questions-container">
+            <div id="q1" class="question active">
+                <p><strong>1. Vilket kön identifierar du dig som?</strong></p>
+                <p class="description">Hormoner påverkar hur vår hud ser ut och känns i olika åldrar.</p>
+                <div class="answers">
+                    <button onclick="selectAnswer('q1', 'kvinna'); nextQuestion('q2')"><img src="https://skinroller.co/image/9694/2-3.png" alt="Kvinna">Kvinna</button>
+                    <button onclick="selectAnswer('q1', 'man'); nextQuestion('q2')"><img src="https://skinroller.co/image/9693/1-3.png" alt="Man">Man</button>
+                    <button onclick="selectAnswer('q1', 'annat'); nextQuestion('q2')"><img src="https://skinroller.co/image/9695/3-3.png" alt="Annat">Annat</button>
+                </div>
+            </div>
+
+            <div id="q2" class="question">
+                <p><strong>2. Hur gammal är du?</strong></p>
+                <p class="description">I olika åldrar förändras hudens struktur och behov. Vi vill hjälpa dig att hitta rätt vård för just din ålder.</p>
+                <div class="answers">
+                    <button onclick="selectAnswer('q2', 'under25'); nextQuestion('q7')">Under 25</button>
+                    <button onclick="selectAnswer('q2', '26-35'); nextQuestion('q7')">26–35</button>
+                    <button onclick="selectAnswer('q2', '36-50'); nextQuestion('q7')">36–50</button>
+                    <button onclick="selectAnswer('q2', 'over50'); nextQuestion('q7')">51 år eller äldre</button>
+                </div>
+                <div class="navigation">
+                    <button class="nav-button" onclick="previousQuestion('q1')">← <strong>Tillbaka</strong></button>
+                </div>
+            </div>
+
+            <div id="q7" class="question">
+                <p><strong>3. Upplever du att din hud är känslig?</strong></p>
+                <p class="description">Känslig hud kan reagera på olika produkter och miljöfaktorer.</p>
+                <div class="answers">
+                    <button onclick="selectAnswer('q7', 'mycket_kanslig'); nextQuestion('q3')">Ja, mycket känslig</button>
+                    <button onclick="selectAnswer('q7', 'lite_kanslig'); nextQuestion('q3')">Ja, lite känslig</button>
+                    <button onclick="selectAnswer('q7', 'inte_kanslig'); nextQuestion('q3')">Nej, inte känslig</button>
+                    <button onclick="selectAnswer('q7', 'vet_inte'); nextQuestion('q3')">Vet inte</button>
+                </div>
+                <div class="navigation">
+                    <button class="nav-button" onclick="previousQuestion('q2')">← <strong>Tillbaka</strong></button>
+                </div>
+            </div>
+
+            <div id="q3" class="question">
+                <p><strong>4. Hur skulle du beskriva din hudtyp?</strong></p>
+                <p class="description"><strong>Tips!</strong> Enklaste sättet att ta reda på vilken hudtyp du har är att rengöra ansiktet, vänta 20 minuter och titta sedan på hur huden har reagerat.</p>
+                <div class="answers">
+                    <button onclick="selectAnswer('q3', 'torr'); showWeatherTip('torr'); nextQuestion('weather')">Torr</button>
+                    <button onclick="selectAnswer('q3', 'normal'); showWeatherTip('normal'); nextQuestion('weather')">Normal</button>
+                    <button onclick="selectAnswer('q3', 'kombinerad'); showWeatherTip('kombinerad'); nextQuestion('weather')">Kombinerad</button>
+                    <button onclick="selectAnswer('q3', 'fet'); showWeatherTip('fet'); nextQuestion('weather')">Fet</button>
+                </div>
+                <div class="navigation">
+                    <button class="nav-button" onclick="previousQuestion('q7')">← <strong>Tillbaka</strong></button>
+                </div>
+            </div>
+
+            <div id="weather" class="question">
+                <p><strong>Väderbaserade Hudvårdsråd</strong></p>
+                <div class="weather-info">
+                    <div class="weather-icon">
+                        <img id="weather-icon" src="" alt="Väderikon">
+                    </div>
+                    <div class="weather-details">
+                        <div class="temperature">
+                            <span id="current-temp"></span>°C
+                        </div>
+                        <div class="humidity">
+                            <span id="current-humidity"></span>% luftfuktighet
+                        </div>
+                        <div class="location">
+                            <span id="current-location"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="weather-tip">
+                    <div class="weather-tip-content" id="weather-tip-content"></div>
+                </div>
+                <div class="navigation">
+                    <button class="nav-button" onclick="previousQuestion('q3')">← <strong>Tillbaka</strong></button>
+                    <button class="nav-button" onclick="nextQuestion('q4')"><strong>Fortsätt</strong> →</button>
+                </div>
+            </div>
+
+            <div id="q4" class="question">
+                <p><strong>5. Jag vill behandla...</strong></p>
+                <p class="description">Skinroller kommer att anpassa din hudvårdsplan baserat på dina behov.</p>
+                <div class="answers">
+                    <button onclick="toggleAnswer(this, 'akne')"><img src="https://skinroller.co/image/9672/1-1.png" alt="Akne">Akne</button>
+                    <button onclick="toggleAnswer(this, 'fina_linjer')"><img src="https://skinroller.co/image/9673/2-1.png" alt="Fina linjer och rynkor">Fina linjer och rynkor</button>
+                    <button onclick="toggleAnswer(this, 'pigmentflackar')"><img src="https://skinroller.co/image/9674/3-1.png" alt="Pigmentfläckar">Pigmentfläckar</button>
+                    <button onclick="toggleAnswer(this, 'rodnad')"><img src="https://skinroller.co/image/9675/4-1.png" alt="Rodnad">Rodnad / Känslighet</button>
+                    <button onclick="toggleAnswer(this, 'uttorkning')"><img src="https://skinroller.co/image/9669/5.png" alt="Uttorkning">Uttorkning / Torrhet</button>
+                    <button onclick="toggleAnswer(this, 'porer')"><img src="https://skinroller.co/image/9670/6.png" alt="Porer">Förstorade porer</button>
+                    <button onclick="toggleAnswer(this, 'morkaringar')"><img src="https://skinroller.co/image/9671/7-1.png" alt="Mörkaringar">Mörkaringar</button>
+                </div>
+                <div class="navigation">
+                    <button class="nav-button" onclick="previousQuestion('q3')">← <strong>Tillbaka</strong></button>
+                    <button class="nav-button" onclick="nextQuestion('q5')"><strong>Nästa</strong> →</button>
+                </div>
+            </div>
+
+            <div id="q5" class="question">
+                <p><strong>6. Har du en daglig hudvårdsrutin?</strong></p>
+                <p class="description">Detta hjälper oss att förstå din nuvarande hudvårdsvana.</p>
+                <div class="answers">
+                    <button onclick="toggleAnswer(this, 'rengoring')"><img src="https://skinroller.co/image/9676/1-2.png" alt="Rengöring">Rengöring</button>
+                    <button onclick="toggleAnswer(this, 'serum')"><img src="https://skinroller.co/image/9677/2-2.png" alt="Serum">Serum</button>
+                    <button onclick="toggleAnswer(this, 'fuktkram')"><img src="https://skinroller.co/image/9678/3-2.png" alt="Kräm">Fuktkräm</button>
+                    <button onclick="toggleAnswer(this, 'solskydd')"><img src="https://skinroller.co/image/9679/4-2.png" alt="Solskydd">Solskydd</button>
+                    <button onclick="toggleAnswer(this, 'toner')"><img src="https://skinroller.co/image/9680/5-1.png" alt="Toner">Toner</button>
+                    <button onclick="toggleAnswer(this, 'ogonkram')"><img src="https://skinroller.co/image/9681/6-1.png" alt="Ögonkräm">Ögonkräm</button>
+                    <button onclick="toggleAnswer(this, 'ingen_rutin')"><img src="https://skinroller.co/image/9682/7-1.png" alt="Ingen rutin">Ingen specifik rutin</button>
+                </div>
+                <div class="navigation">
+                    <button class="nav-button" onclick="previousQuestion('q4')">← <strong>Tillbaka</strong></button>
+                    <button class="nav-button" onclick="nextQuestion('q6')"><strong>Nästa</strong> →</button>
+                </div>
+            </div>
+
+            <div id="q6" class="question">
+                <p><strong>7. Använder du solskyddsmedel utomhus?</strong></p>
+                <p class="description">Solskydd är avgörande för att förebygga hudskador och tidigt åldrande.</p>
+                <div class="answers">
+                    <button onclick="selectAnswer('q6', 'alltid'); nextQuestion('q8')">Ja, alltid</button>
+                    <button onclick="selectAnswer('q6', 'ibland'); nextQuestion('q8')">Ibland</button>
+                    <button onclick="selectAnswer('q6', 'sallan'); nextQuestion('q8')">Sällan</button>
+                    <button onclick="selectAnswer('q6', 'aldrig'); nextQuestion('q8')">Nej, aldrig</button>
+                </div>
+                <div class="navigation">
+                    <button class="nav-button" onclick="previousQuestion('q5')">← <strong>Tillbaka</strong></button>
+                </div>
+            </div>
+
+            <div id="q8" class="question">
+                <p><strong>8. Har du testat eller vill du testa dermaroller?</strong></p>
+                <p class="description">En dermaroller är ett verktyg med små nålar som skapar mikrokanaler i huden, vilket kan öka upptaget av produkter och stimulera kollagenproduktionen.</p>
+                <div class="answers">
+                    <button onclick="selectAnswer('q8', 'ja_testat'); nextQuestion('final')">Ja, jag har testat</button>
+                    <button onclick="selectAnswer('q8', 'intresserad'); nextQuestion('final')">Nej, men jag är intresserad</button>
+                    <button onclick="selectAnswer('q8', 'inte_intresserad'); nextQuestion('final')">Nej, jag är inte intresserad</button>
+                </div>
+                <div class="navigation">
+                    <button class="nav-button" onclick="previousQuestion('q6')">← <strong>Tillbaka</strong></button>
+                </div>
+            </div>
+
+            <div id="final" class="question">
+                <p><strong>Tack för din medverkan!</strong></p>
+                <p class="description">Baserat på dina svar har vi sammanställt en personlig rekommendation för din hudvård.</p>
+                <div class="product-grid" id="recommended-products">
+                </div>
+                <div class="navigation">
+                    <button class="nav-button" onclick="showRecommendations()"><strong>Se Dina Personliga Rekommendationer</strong> →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const productDatabase = {
+    serums: [
+        {
+            name: "Radiant Vitamin C Serum 15% Booster",
+            description: "Ett kraftfullt serum med 15% vitamin C som ger en ljusare och jämnare hudton. Perfekt för att behandla pigmentfläckar och ge huden ny lyster.",
+            image: "https://skinroller.co/image/9712/2.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/radiant-vitamin-c-serum-15-booster-30ml/",
+            type: "serum",
+            concerns: ["pigmentflackar", "akne", "fina_linjer"]
+        },
+        {
+            name: "Brilliant Anti Acne - Serum & Ansiktskräm",
+            description: "En effektiv kombination av serum och kräm speciellt utvecklad för att behandla och förebygga akne.",
+            image: "https://skinroller.co/image/9713/3.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/brilliant-anti-acne-serum-ansiktskram/",
+            type: "serum",
+            concerns: ["akne", "fet"]
+        },
+        {
+            name: "Skinroller + Radiant Vitamin C-serum",
+            description: "En kraftfull kombination av dermaroller och vitamin C-serum för optimal absorption och resultat.",
+            image: "https://skinroller.co/image/9711/6.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/skinroller-radiant-vitamin-c-serum-30ml-p1681/",
+            type: "serum",
+            concerns: ["pigmentflackar", "fina_linjer"]
+        },
+        {
+            name: "Vitamin A (Retinyl Palmitate) Ansiktsserum",
+            description: "Ett effektivt anti-age serum som motverkar fina linjer och rynkor.",
+            image: "https://skinroller.co/image/9699/8.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/vitamin-a-retinyl-palmitate-ansiktsserum-30-ml/",
+            type: "serum",
+            concerns: ["fina_linjer", "rynkor"]
+        }
+    ],
+    treatments: [
+        {
+            name: "Brilliant Purifying Pink Clay Mask",
+            description: "En djuprengörande lermask som absorberar överflödigt talg och rengör porerna.",
+            image: "https://skinroller.co/image/9714/1.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/brilliant-purifying-pink-clay-mask-100-ml/",
+            type: "treatment",
+            concerns: ["akne", "fet", "porer"]
+        },
+        {
+            name: "Cicamed Active Spot",
+            description: "En effektiv punktbehandling för att snabbt behandla akne och finnar.",
+            image: "https://skinroller.co/image/9709/5.png",
+            link: "https://skinroller.co/sv/varumarken/cicamed/cicamed-active-spot-15-g-punktbehandling-mot-finnar/",
+            type: "treatment",
+            concerns: ["akne"]
+        },
+        {
+            name: "Intense Rejuvenating Sleep Mask",
+            description: "En intensivt återfuktande nattmask som verkar medan du sover.",
+            image: "https://skinroller.co/image/9710/7.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/intense-rejuvenating-sleep-mask-100-ml/",
+            type: "treatment",
+            concerns: ["uttorkning", "fina_linjer"]
+        },
+        {
+            name: "Bye Bye Pores - 2-stegs kit",
+            description: "Ett komplett 2-stegs behandlingskit för att effektivt minimera porer.",
+            image: "https://skinroller.co/image/9704/12.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/bye-bye-pores-2-stegs-kit/",
+            type: "treatment",
+            concerns: ["porer", "akne", "fet"]
+        }
+    ],
+    creams: [
+        {
+            name: "Koreansk Ansiktskräm Snail Repair Anti-Wrinkle",
+            description: "En lyxig anti-age kräm med snailextrakt för optimal återfuktning.",
+            image: "https://skinroller.co/image/9699/9.png",
+            link: "https://skinroller.co/sv/varumarken/chamos-acaci/koreansk-ansiktskram-snail-repair-anti-wrinkle-anti-aging-50-ml/",
+            type: "cream",
+            concerns: ["fina_linjer", "uttorkning"]
+        },
+        {
+            name: "Renewal Instant Hydrating Cream",
+            description: "En intensivt återfuktande kräm för torr och känslig hud.",
+            image: "https://skinroller.co/image/9703/13.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/renewal-instant-hydrating-cream-50-ml/",
+            type: "cream",
+            concerns: ["uttorkning", "rodnad"]
+        },
+        {
+            name: "Renewal Återfuktande Hyaluronsyra",
+            description: "En lätt och effektiv fuktkräm med hyaluronsyra.",
+            image: "https://skinroller.co/image/9704/14.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/renewal-aterfuktande-hyaluronsyra-bha-30ml/",
+            type: "cream",
+            concerns: ["uttorkning", "kombinerad"]
+        }
+    ],
+    sunscreen: [
+        {
+            name: "Sun Touch SPF 50+ 50ml - Solskydd",
+            description: "Ett högeffektivt solskydd som skyddar mot både UVA och UVB strålar.",
+            image: "https://skinroller.co/image/9703/16.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/sun-touch-spf-50-50ml-solskydd-solkram/",
+            type: "sunscreen",
+            concerns: ["pigmentflackar", "fina_linjer"]
+        }
+    ],
+    eye: [
+        {
+            name: "Radiant C-Bright Eye Serum",
+            description: "Ett uppfriskande ögonserum som motverkar mörka ringar och svullnad.",
+            image: "https://skinroller.co/image/9702/17.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/radiant-c-bright-eye-serum-15-ml-ogonserum-ogonkram/",
+            type: "eye",
+            concerns: ["morkaringar", "fina_linjer"]
+        }
+    ],
+    kits: [
+        {
+            name: "Vitamin C- & Retinol Serum Kit",
+            description: "Ett komplett kit med både vitamin C och retinol för optimal hudvård.",
+            image: "https://skinroller.co/image/9707/10.png",
+            link: "https://skinroller.co/sv/lansktavard/hudvardskit/vitamin-c-retinol-serum-kit-30-ml-30-ml-neutherbs/",
+            type: "kit",
+            concerns: ["pigmentflackar", "fina_linjer", "akne"]
+        },
+        {
+            name: "Skinroller + Retinol 0.5 % & Vitamin E",
+            description: "En kraftfull kombination för optimal anti-age behandling.",
+            image: "https://skinroller.co/image/9706/11.png",
+            link: "https://skinroller.co/sv/lansktavard/hudvardskit/skinroller-retinol-05-vitamin-e-intense/",
+            type: "kit",
+            concerns: ["fina_linjer", "rynkor"]
+        },
+        {
+            name: "Renewal & Glow Startkit",
+            description: "Ett perfekt startkit för att påbörja din hudvårdsrutin.",
+            image: "https://skinroller.co/image/9701/15.png",
+            link: "https://skinroller.co/sv/varumarken/skinroller/renewal-glow-startkit/",
+            type: "kit",
+            concerns: ["uttorkning", "pigmentflackar"]
+        }
+    ]
+};
+
+let userAnswers = {};
+let selectedConcerns = [];
+let weatherTip = '';
+const progressBar = document.getElementById('progress-bar');
+const questionIndicator = document.getElementById('question-indicator');
+const totalQuestions = 8;
+let currentQuestionIndex = 0;
+
+function initializeQuestionIndicator() {
+    for (let i = 0; i < totalQuestions; i++) {
+        const dot = document.createElement('div');
+        dot.classList.add('indicator-dot');
+        if (i === 0) dot.classList.add('active');
+        questionIndicator.appendChild(dot);
+    }
+}
+
+function updateQuestionIndicator() {
+    const dots = document.querySelectorAll('.indicator-dot');
+    dots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentQuestionIndex);
+    });
+}
+
+function updateProgressBar() {
+    const totalSteps = 9; // 总共9个问题（不包括final页面）
+    const progress = ((currentQuestionIndex + 1) / totalSteps) * 100;
+    progressBar.style.width = `${Math.min(progress, 100)}%`;
+}
+
+function selectAnswer(questionId, answer) {
+    userAnswers[questionId] = answer;
+}
+
+function toggleAnswer(button, value) {
+    button.classList.toggle('selected');
+    const index = selectedConcerns.indexOf(value);
+    if (index > -1) {
+        selectedConcerns.splice(index, 1);
+    } else {
+        selectedConcerns.push(value);
+    }
+}
+
+function nextQuestion(nextId) {
+    const current = document.querySelector('.question.active');
+    const next = document.getElementById(nextId);
+
+    if (current) {
+        current.style.opacity = '0';
+        current.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            current.classList.remove('active');
+            next.classList.add('active');
+            setTimeout(() => {
+                next.style.opacity = '1';
+                next.style.transform = 'translateY(0)';
+            }, 50);
+        }, 300);
+    }
+
+    // 更新问题序号映射
+    const questionOrder = {
+        'q1': 0,  // 性别
+        'q2': 1,  // 年龄
+        'q7': 2,  // 敏感度
+        'q3': 3,  // 肤质
+        'weather': 4, // 天气
+        'q4': 5,  // 护理目标
+        'q5': 6,  // 日常护理
+        'q6': 7,  // 防晒习惯
+        'q8': 8,  // dermaroller
+        'final': 9 // 最终页
+    };
+
+    currentQuestionIndex = questionOrder[nextId] || 0;
+    updateProgressBar();
+    updateQuestionIndicator();
+}
+
+function previousQuestion(prevId) {
+    const current = document.querySelector('.question.active');
+    const prev = document.getElementById(prevId);
+
+    if (current) {
+        current.style.opacity = '0';
+        current.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            current.classList.remove('active');
+            prev.classList.add('active');
+            setTimeout(() => {
+                prev.style.opacity = '1';
+                prev.style.transform = 'translateY(0)';
+            }, 50);
+        }, 300);
+    }
+
+    // 使用相同的问题序号映射
+    const questionOrder = {
+        'q1': 0,
+        'q2': 1,
+        'q7': 2,
+        'q3': 3,
+        'weather': 4,
+        'q4': 5,
+        'q5': 6,
+        'q6': 7,
+        'q8': 8,
+        'final': 9
+    };
+
+    currentQuestionIndex = questionOrder[prevId] || 0;
+    updateProgressBar();
+    updateQuestionIndicator();
+}
+
+function calculateProductScores() {
+    let allProducts = [];
+    let userProducts = new Set();
+    let recommendedProducts = [];
+
+    // 获取用户当前使用的产品类型
+    if (selectedConcerns.includes('rengoring')) userProducts.add('cleanser');
+    if (selectedConcerns.includes('serum')) userProducts.add('serum');
+    if (selectedConcerns.includes('fuktkram')) userProducts.add('cream');
+    if (selectedConcerns.includes('solskydd')) userProducts.add('sunscreen');
+    if (selectedConcerns.includes('ogonkram')) userProducts.add('eye');
+
+    // 收集所有产品并计算分数
+    Object.values(productDatabase).forEach(category => {
+        category.forEach(product => {
+            let score = 0;
+
+            // 如果用户没有使用这类产品，增加分数
+            if (!userProducts.has(product.type)) {
+                score += 20;
+            }
+
+            // 根据肤质评分
+            if (userAnswers.q3 === 'torr' && product.concerns.includes('uttorkning')) {
+                score += 15;
+            }
+            if (userAnswers.q3 === 'fet' && 
+                (product.concerns.includes('fet') || product.concerns.includes('porer'))) {
+                score += 15;
+            }
+
+            // 根据具体问题评分
+            selectedConcerns.forEach(concern => {
+                if (product.concerns.includes(concern)) {
+                    score += 25;
+                }
+            });
+
+            // 年龄相关评分
+            if ((userAnswers.q2 === 'over50' || userAnswers.q2 === '36-50') && 
+                product.concerns.includes('fina_linjer')) {
+                score += 20;
+            }
+
+            // 防晒相关评分
+            if ((userAnswers.q6 === 'sallan' || userAnswers.q6 === 'aldrig') && 
+                product.type === 'sunscreen') {
+                score += 30;
+            }
+
+            // 敏感肌肤考虑
+            if (userAnswers.q7 === 'mycket_kanslig' && 
+                (product.concerns.includes('rodnad') || product.type === 'cream')) {
+                score += 15;
+            }
+
+            product.score = score;
+            allProducts.push(product);
+        });
+    });
+
+    // 按分数排序
+    allProducts.sort((a, b) => b.score - a.score);
+
+    // 确保推荐多样性
+    let selectedTypes = new Set();
+
+    allProducts.forEach(product => {
+        if (product.score > 0 && 
+            (recommendedProducts.length < 4 || product.score > 30)) {
+            if (!selectedTypes.has(product.type) || recommendedProducts.length >= 4) {
+                recommendedProducts.push(product);
+                selectedTypes.add(product.type);
+            }
+        }
+    });
+
+    return recommendedProducts;
+}
+
+function showRecommendations() {
+    const recommendationContainer = document.getElementById('recommended-products');
+    recommendationContainer.innerHTML = '';
+
+    // 添加天气建议
+    if (weatherTip) {
+        console.log('Showing weather tip:', weatherTip);
+        const weatherTipElement = document.createElement('div');
+        weatherTipElement.classList.add('weather-tip');
+        weatherTipElement.innerHTML = `
+            <div class="weather-tip-content">${weatherTip}</div>
+        `;
+        recommendationContainer.appendChild(weatherTipElement);
+    } else {
+        console.log('No weather tip available');
+    }
+
+    const recommendations = calculateProductScores();
+
+    recommendations.forEach(product => {
+        const productCard = document.createElement('div');
+        productCard.classList.add('product-card');
+
+        let typeLabel = '';
+        switch(product.type) {
+            case 'serum':
+                typeLabel = 'Serum';
+                break;
+            case 'cream':
+                typeLabel = 'Ansiktskräm';
+                break;
+            case 'treatment':
+                typeLabel = 'Specialbehandling';
+                break;
+            case 'eye':
+                typeLabel = 'Ögonvård';
+                break;
+            case 'sunscreen':
+                typeLabel = 'Solskydd';
+                break;
+            case 'kit':
+                typeLabel = 'Hudvårdskit';
+                break;
+        }
+
+        const buyButton = `<a href="${product.link}" class="buy-button" target="_blank">Köp nu</a>`;
+        productCard.innerHTML = `
+            <img src="${product.image}" alt="${product.name}" class="product-image">
+            <div class="product-info">
+                <div class="product-type">${typeLabel}</div>
+                <h3 class="product-title">${product.name}</h3>
+                <p class="product-description">${product.description}</p>
+                ${buyButton}
+            </div>
+        `;
+        recommendationContainer.appendChild(productCard);
+    });
+
+    const finalNavigation = document.querySelector('#final .navigation');
+    if (finalNavigation) {
+        finalNavigation.style.display = 'none';
+    }
+}
+
+async function showWeatherTip(skinType) {
+    try {
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+
+        const response = await fetch(`https://api.weatherapi.com/v1/current.json?key=5fd844ec2a9d488fbee154116252804&q=${position.coords.latitude},${position.coords.longitude}&lang=sv&aqi=no`);
+        const weatherData = await response.json();
+        
+        const temperature = weatherData.current.temp_c;
+        const humidity = weatherData.current.humidity;
+        const city = weatherData.location.name;
+        const condition = weatherData.current.condition.text;
+        const icon = weatherData.current.condition.icon;
+
+        // 更新天气信息显示
+        document.getElementById('current-temp').textContent = temperature;
+        document.getElementById('current-humidity').textContent = humidity;
+        document.getElementById('current-location').textContent = city;
+        document.getElementById('weather-icon').src = icon;
+
+        let skinAdvice = '';
+
+        // 根据温度范围和肤质给出建议
+        if (temperature <= 10) {
+            // 寒冷天气 (≤10°C)
+            switch(skinType) {
+                case 'torr':
+                    skinAdvice = `Vid ${temperature}°C (Kallt väder): För torr hud - Mycket benägen för fjällning och stickande smärta, sprickor och röda blodkärl i allvarliga fall. Rekommendationer:\n1. Använd rikligt med fuktgivande kräm\n2. Undvik direkt exponering för kall vind\n3. Skydda huden med barriärkräm\n4. Använd luftfuktare inomhus`;
+                    break;
+                case 'normal':
+                    skinAdvice = `Vid ${temperature}°C (Kallt väder): För normal hud - Lätt torrhet, men hudtillståndet kan generellt upprätthållas. Rekommendationer:\n1. Upprätthåll grundläggande hudvårdsrutin\n2. Använd rikare fuktkräm än vanligt\n3. Skydda mot vind och kyla\n4. Undvik het vatten vid rengöring`;
+                    break;
+                case 'fet':
+                    skinAdvice = `Vid ${temperature}°C (Kallt väder): För fet hud - Minskad talgproduktion, ytan kan kännas bättre men är fortfarande "torr inuti, oljig utanpå". Rekommendationer:\n1. Använd lätt men effektiv fuktkräm\n2. Rengör varsamt\n3. Undvik uttorkande produkter\n4. Balansera fukt och olja`;
+                    break;
+                case 'kombinerad':
+                    skinAdvice = `Vid ${temperature}°C (Kallt väder): För kombinerad hud - Torra kinder, T-zonen fortfarande stabil. Risk för samtidig fjällning och lokala utbrott. Rekommendationer:\n1. Använd olika produkter för olika områden\n2. Extra fukt på kinderna\n3. Skydda mot vind\n4. Undvik irriterande ingredienser`;
+                    break;
+            }
+        } else if (temperature <= 20) {
+            // 清凉天气 (11-20°C)
+            switch(skinType) {
+                case 'torr':
+                    skinAdvice = `Vid ${temperature}°C (Svalt väder): För torr hud - Fuktig luft lindrar torrhet något, men fuktvård behövs fortfarande. Risk för svettning och tilltäppning. Rekommendationer:\n1. Fortsätt med regelbunden fuktvård\n2. Använd lätta lager av fuktgivande produkter\n3. Rengör varsamt efter svettning\n4. Undvik uttorkande produkter`;
+                    break;
+                case 'normal':
+                    skinAdvice = `Vid ${temperature}°C (Svalt väder): För normal hud - Stabil hudstatus, men var uppmärksam på rengöring. Porerna kan bli lätt tilltäppta. Rekommendationer:\n1. Upprätthåll normal hudvårdsrutin\n2. Rengör noggrant men skonsamt\n3. Använd lätt fuktkräm\n4. Exfoliera försiktigt vid behov`;
+                    break;
+                case 'fet':
+                    skinAdvice = `Vid ${temperature}°C (Svalt väder): För fet hud - Ökad talgproduktion, förstorade porer, risk för tilltäppning och akne. Rekommendationer:\n1. Använd oljereglerande produkter\n2. Rengör noggrant\n3. Undvik tunga krämer\n4. Använd lätta, ickefettande produkter`;
+                    break;
+                case 'kombinerad':
+                    skinAdvice = `Vid ${temperature}°C (Svalt väder): För kombinerad hud - Oljig T-zon, stabila kinder. Risk för lokala tilltäppningar. Rekommendationer:\n1. Anpassa produkter efter hudområde\n2. Balansera fukt och olja\n3. Var extra noggrann med T-zonen\n4. Använd lätta lager av produkter`;
+                    break;
+            }
+        } else if (temperature <= 27) {
+            // 温暖天气 (21-27°C)
+            switch(skinType) {
+                case 'torr':
+                    skinAdvice = `Vid ${temperature}°C (Varmt väder): För torr hud - Svettning tar bort hudens fukt, lite olja på ytan men fortfarande uttorkad. Känslig för solbränna. Rekommendationer:\n1. Använd lätt men effektiv fuktkräm\n2. Applicera solskydd regelbundet\n3. Håll huden sval och fuktig\n4. Använd fuktspray vid behov`;
+                    break;
+                case 'normal':
+                    skinAdvice = `Vid ${temperature}°C (Varmt väder): För normal hud - Lätt oljig men hanterbar. Fokusera på solskydd och rengöring. Rekommendationer:\n1. Använd lätt fuktkräm\n2. Rengör noggrant\n3. Återapplicera solskydd\n4. Undvik överdriven rengöring`;
+                    break;
+                case 'fet':
+                    skinAdvice = `Vid ${temperature}°C (Varmt väder): För fet hud - Kraftig talgproduktion, tilltäppta porer, akne. Mörk hudton. Rekommendationer:\n1. Använd oljereglerande produkter\n2. Rengör grundligt men skonsamt\n3. Välj oljefritt solskydd\n4. Exfoliera regelbundet`;
+                    break;
+                case 'kombinerad':
+                    skinAdvice = `Vid ${temperature}°C (Varmt väder): För kombinerad hud - Mycket olja i T-zonen, lätt torrhet på kinderna. Svår att behandla enhetligt. Rekommendationer:\n1. Använd olika produkter för olika områden\n2. Fokusera på T-zonen\n3. Håll kinderna fuktade\n4. Välj lätta, ickefettande produkter`;
+                    break;
+            }
+        } else {
+            // 炎热天气 (>27°C)
+            switch(skinType) {
+                case 'torr':
+                    skinAdvice = `Vid ${temperature}°C (Mycket varmt väder): För torr hud - Extrem uttorkning, stickande smärta, risk för sprickor och röda blodkärl. Rekommendationer:\n1. Använd extra fuktgivande produkter\n2. Undvik direkt solljus\n3. Använd stark solskydd\n4. Håll huden sval`;
+                    break;
+                case 'normal':
+                    skinAdvice = `Vid ${temperature}°C (Mycket varmt väder): För normal hud - Lätt torrhet, men hudtillståndet är generellt stabilt. Rekommendationer:\n1. Upprätthåll normal hudvårdsrutin\n2. Använd solskydd regelbundet\n3. Rengör varsamt\n4. Håll huden sval och fuktig`;
+                    break;
+                case 'fet':
+                    skinAdvice = `Vid ${temperature}°C (Mycket varmt väder): För fet hud - Minskad talgproduktion på ytan men risk för "inre torrhet". Rekommendationer:\n1. Använd lätt fuktkräm\n2. Rengör noggrant men skonsamt\n3. Välj oljefritt solskydd\n4. Undvik uttorkande produkter`;
+                    break;
+                case 'kombinerad':
+                    skinAdvice = `Vid ${temperature}°C (Mycket varmt väder): För kombinerad hud - Torra kinder, stabil T-zon. Risk för samtidig fjällning och lokala utbrott. Rekommendationer:\n1. Anpassa produkter efter hudområde\n2. Extra fukt på kinderna\n3. Använd solskydd överallt\n4. Balansera fukt och olja`;
+                    break;
+            }
+        }
+
+        const weatherTipContent = document.getElementById('weather-tip-content');
+        weatherTipContent.innerHTML = `
+            <div class="weather-tip-header">
+                <img src="${icon}" alt="Väderikon" class="weather-icon">
+                <h3>Hudvårdsråd för ${skinType} hud vid ${temperature}°C</h3>
+            </div>
+            <div class="weather-tip-body">
+                <div class="weather-condition">
+                    <h4>Hudtillstånd</h4>
+                    <p>${skinAdvice.split('Rekommendationer:')[0]}</p>
+                </div>
+                <div class="weather-recommendations">
+                    ${skinAdvice.split('Rekommendationer:')[1].split('\n').filter(rec => rec.trim()).map(rec => 
+                        `<li>${rec.replace(/^\d+\.\s*/, '')}</li>`
+                    ).join('')}
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Kunde inte hämta väderdata:', error);
+        const weatherTipContent = document.getElementById('weather-tip-content');
+        weatherTipContent.innerHTML = `
+            <div class="compatibility-description">Kunde inte hämta väderdata. Vänligen kontrollera din internetanslutning.</div>
+        `;
+    }
+}
+
+// 初始化
+initializeQuestionIndicator();
+updateProgressBar();
+</script>
+</body>
+</html>
